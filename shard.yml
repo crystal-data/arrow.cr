@@ -1,0 +1,14 @@
+name: arrow
+version: 0.1.0
+
+authors:
+  - your-name-here <your-email-here>
+
+crystal: 1.2.1
+
+license: MIT
+
+dependencies:
+  gobject:
+    github: jhass/crystal-gobject
+    version: ~> 0.10.0
