@@ -105,6 +105,24 @@ class Arrow::Array
     end
     result
   end
+
+  # Returns an iterator through an `Arrow::Array`, as well as the
+  # number of elements stored in the `Arrow::Array`.  Used primarily to
+  # access the raw Crystal pointer associated with an `Arrow::Array`
+  #
+  # ## Examples
+  #
+  # ```crystal
+  # arr = Arrow::Int32Array.new [1, 2, 3]
+  # data, n = arr.values
+  # puts data.array[1] # => 2
+  # ```
+  def values
+    iterator = GObject::PointerIterator.new(Pointer(Int32).null) do |i|
+      i
+    end
+    {iterator, 0}
+  end
 end
 
 macro build_array_constructors
