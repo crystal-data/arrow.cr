@@ -155,3 +155,9 @@ macro build_array_constructors
 end
 
 build_array_constructors
+
+class GObject::PointerIterator(T, V)
+  def to_unsafe
+    @array
+  end
+end
