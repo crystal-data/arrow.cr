@@ -21,9 +21,42 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# Base `Arrow::Array` class.  Instances of this class cannot be indexed,
+# since the base class doesn't have a `value` method.
 class Arrow::Array
+  # Returns the value in an `Arrow::Array` at a given index, or `nil`
+  # if the element is null.  This method is only present on the base
+  # class to deal with compile time issues
+  #
+  # ## Arguments
+  #
+  # * i : `Int` - Index of element to return
+  #
+  # ## Examples
+  #
+  # ```
+  # a = Arrow::ArrayBuilder.build([1, 2, 3])
+  # i = Arrow::Int32Array.cast(a)
+  # i.value(0) # => 1
+  # ```
   def value(i : Int); end
 
+  # Returns the value in an `Arrow::Array` at a given index, or `nil`
+  # if the element is null.  This method is only present on the base
+  # class to deal with compile time issues
+  #
+  # ## Arguments
+  #
+  # * i : `Int` - Index of element to return
+  #
+  # ## Examples
+  #
+  # ```
+  # a = Arrow::ArrayBuilder.build([1, nil, 3])
+  # i = Arrow::Int32Array.cast(a)
+  # i[2] # => 3
+  # i[1] # => nil
+  # ```
   def [](i : Int)
     i += self.length if i < 0
     return nil if i < 0 || i >= self.length
@@ -34,13 +67,38 @@ class Arrow::Array
     end
   end
 
+  # Yields the elements of an `Arrow::Array`.
+  #
+  # ## Examples
+  #
+  # ```
+  # a = Arrow::ArrayBuilder.build([1, nil, 3])
+  # i = Arrow::Int32Array.cast(a)
+  # i.each do |el|
+  #   puts el
+  # end
+  #
+  # # 1
+  # # nil
+  # # 3
+  # ```
   def each
     self.length.times do |i|
       yield self[i]
     end
   end
 
-  def to_a(dtype : U.class) forall U
+  # Converts the elements of an `Arrow::Array` to a standard library
+  # Array.
+  #
+  # ## Examples
+  #
+  # ```
+  # a = Arrow::ArrayBuilder.build([1, nil, 3])
+  # i = Arrow::Int32Array.cast(a)
+  # i.to_a(Int32) # => [1, nil, 3]
+  # ```
+  def to_a(dtype : U.class) : ::Array(U | Nil) forall U
     result = [] of U | Nil
     each do |v|
       result << v
@@ -48,3 +106,34 @@ class Arrow::Array
     result
   end
 end
+
+macro build_array_constructors
+  {% for dtype in [
+                    Int8,
+                    UInt8,
+                    Int16,
+                    UInt16,
+                    Int32,
+                    UInt32,
+                    Int64,
+                    UInt64,
+                    "Boolean",
+                    "Dictionary",
+                    Float,
+                    "Double",
+                    String,
+                    "Date32",
+                    "Date64",
+                    "Extension",
+                    "Null",
+                  ] %}
+    class Arrow::{{dtype.id}}Array
+      def self.new(ary : ::Array)
+        result = Arrow::ArrayBuilder.build(ary)
+        Arrow::{{dtype.id}}Array.cast(result)
+      end
+    end
+  {% end %}
+end
+
+build_array_constructors
